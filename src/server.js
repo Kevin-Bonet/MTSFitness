@@ -1,11 +1,28 @@
 import express from "express";
 import axios from "axios";
 import mysql from "mysql2";
+import 'dotenv/config'
 
 const app = express();
 
-const API_HOST = "exercisedb.p.rapidapi.com"
-const API_KEY = "4f0639c89emsh04f8e6abc62c820p13ef26jsndc4976422036"
+import { auth } from 'express-openid-connect';
+
+const config = {
+  authRequired: process.env.AUTHREQUIRED,
+  auth0Logout: process.env.AUTH0LOGOUT,
+  baseURL: process.env.BASE_URL,
+  clientID: process.env.AUTH0_CLIENT_ID,
+  issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL,
+  secret: process.env.SESSION_SECRET
+};
+
+// auth router attaches /login, /logout, and /callback routes to the baseURL
+app.use(auth(config));
+
+// req.isAuthenticated is provided from the auth router
+app.get('/', (req, res) => {
+  res.send(req.oidc.isAuthenticated() ? 'Logged in' : 'Logged out')
+});
 
 // Create a connection to the database
 const db = mysql.createConnection({
@@ -25,10 +42,7 @@ const db = mysql.createConnection({
     console.log("Connected to the MySQL database.");
   });
 
-// Home
-app.get("/", (req, res) => {
-  res.send("Hello, Express with ES Modules!");
-});
+
 
 // Example route to fetch data from the users table
 app.get("/users", (req, res) => {
@@ -47,14 +61,14 @@ app.get("/users", (req, res) => {
 app.get("/api/exercises", async (req, res) => {
   const options = {
     method: 'GET',
-    url: `https://${API_HOST}/exercises`,
+    url: `https://${process.env.API_HOST}/exercises`,
     params: {
       limit: '10',
       offset: '0'
     },
     headers: {
-      'x-rapidapi-key': API_KEY,
-      'x-rapidapi-host': API_HOST,
+      'x-rapidapi-key': process.env.API_KEY,
+      'x-rapidapi-host': process.env.API_HOST,
     }
   };
   
@@ -73,14 +87,14 @@ app.get("/api/exercises/muscles/:muscle", async (req,res) => {
 const { muscle } = req.params;
 const options = {
   method: 'GET',
-  url: `https://${API_HOST}/exercises/target/${muscle}`,
+  url: `https://${process.env.API_HOST}/exercises/target/${muscle}`,
   params: {
     limit: '10',
     offset: '0'
   },
   headers: {
-    'x-rapidapi-key': API_KEY,
-    'x-rapidapi-host': API_HOST
+    'x-rapidapi-key': process.env.API_KEY,
+    'x-rapidapi-host': process.env.API_HOST
   }
 };
 
